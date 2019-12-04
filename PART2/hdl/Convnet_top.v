@@ -1,7 +1,10 @@
 module Convnet_top #(
 parameter CH_NUM = 4,
 parameter ACT_PER_ADDR = 4,
-parameter BW_PER_ACT = 8
+parameter BW_PER_ACT = 8,
+parameter WEIGHT_PER_ADDR = 9, 
+parameter BIAS_PER_ADDR = 1,
+parameter BW_PER_PARAM = 4
 )
 (
 input clk,                           //clock input
@@ -15,28 +18,54 @@ input [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] sram_rdata_a0,
 input [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] sram_rdata_a1,
 input [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] sram_rdata_a2,
 input [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] sram_rdata_a3,
+//read data from SRAM group B
+input [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] sram_rdata_b0,
+input [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] sram_rdata_b1,
+input [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] sram_rdata_b2,
+input [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] sram_rdata_b3,
+
+input [WEIGHT_PER_ADDR*BW_PER_PARAM-1:0] sram_rdata_weight,  //read data from SRAM weight
+input [BIAS_PER_ADDR*BW_PER_PARAM-1:0] sram_rdata_bias,      //read data from SRAM bias
 
 //read address from SRAM group A
 output [5:0] sram_raddr_a0,
 output [5:0] sram_raddr_a1,
 output [5:0] sram_raddr_a2,
 output [5:0] sram_raddr_a3,
+//read address from SRAM group B
+output [5:0] sram_raddr_b0,
+output [5:0] sram_raddr_b1,
+output [5:0] sram_raddr_b2,
+output [5:0] sram_raddr_b3,
+
+output [10:0] sram_raddr_weight,       //read address from SRAM weight  
+output [6:0] sram_raddr_bias,          //read address from SRAM bias 
 
 output busy,
+output test_layer_finish,
 output valid,                         //output valid to check the final answer (after POOL)
 
-//write enable for SRAM group A 
+//write enable for SRAM groups A & B
 output sram_wen_a0,
 output sram_wen_a1,
 output sram_wen_a2,
 output sram_wen_a3,
+output sram_wen_b0,
+output sram_wen_b1,
+output sram_wen_b2,
+output sram_wen_b3,
 
-//bytemask for SRAM group A 
+//bytemask for SRAM groups A & B
 output [CH_NUM*ACT_PER_ADDR-1:0] sram_bytemask_a,
-//write addrress to SRAM group A 
+output [CH_NUM*ACT_PER_ADDR-1:0] sram_bytemask_b,
+
+//write addrress to SRAM groups A & B
 output [5:0] sram_waddr_a,
-//write data to SRAM group A 
-output [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] sram_wdata_a
+output [5:0] sram_waddr_b,
+
+//write data to SRAM groups A & B
+output [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] sram_wdata_a,
+output [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] sram_wdata_b
 );
 
 wire unshuffle_valid;
@@ -136,6 +165,7 @@ always @* begin
         endcase
     end 
 end 
+
 
 
 endmodule
