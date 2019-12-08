@@ -77,10 +77,13 @@ reg unsh_n_sram_wen_a1;
 reg unsh_n_sram_wen_a2;
 reg unsh_n_sram_wen_a3;
 reg [CH_NUM*ACT_PER_ADDR-1:0] l_sram_bytemask_a, nl_sram_bytemask_a;
+reg [CH_NUM*ACT_PER_ADDR-1:0] l_sram_bytemask_b, nl_sram_bytemask_b;
 wire [CH_NUM*ACT_PER_ADDR-1:0] unsh_n_sram_bytemask_a;
 reg [5:0] l_sram_waddr_a, nl_sram_waddr_a;
+reg [5:0] l_sram_waddr_b, nl_sram_waddr_b;
 wire [5:0] unsh_n_sram_waddr_a;
 reg [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] l_sram_wdata_a, nl_sram_wdata_a;
+reg [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] l_sram_wdata_b, nl_sram_wdata_b;
 wire [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] unsh_n_sram_wdata_a;
 localparam IDLE=3'd0, UNSHUFFLE=3'd1, CONV1=3'd2, END=3'd7;
 reg [2:0] state, nstate;
@@ -92,9 +95,9 @@ reg [5:0] n_sram_raddr_a0, n_sram_raddr_a1, n_sram_raddr_a2, n_sram_raddr_a3;
 reg [5:0] lsram_raddr_a0, lsram_raddr_a1, lsram_raddr_a2, lsram_raddr_a3;
 reg [10:0] lsram_raddr_weight, nsram_raddr_weight;
 reg [6:0] lraddr_bias, nraddr_bias;
-wire [10:0] shuffle_n_raddr_weight;
-wire [6:0] shuffle_n_raddr_bias;
-wire shuffle_wr_b, shuffle_wr_w;
+wire [10:0] shuffle_n_raddr_weight, conv1_n_raddr_weight;
+wire [6:0] shuffle_n_raddr_bias, conv1_n_raddr_bias;
+wire shuffle_wr_b, shuffle_wr_w, conv1_wr_w, conv1_wr_b;
 assign sram_raddr_weight = lsram_raddr_weight;
 assign sram_raddr_bias = lraddr_bias;
 
@@ -121,9 +124,13 @@ assign sram_wen_b2 = l_sram_b_wen[2];
 assign sram_wen_b3 = l_sram_b_wen[3];
 
 assign sram_bytemask_a = l_sram_bytemask_a;
+assign sram_bytemask_b = l_sram_bytemask_b;
 assign sram_waddr_a = l_sram_waddr_a;
+assign sram_waddr_b = l_sram_waddr_b;
 assign sram_wdata_a = l_sram_wdata_a;
+assign sram_wdata_b = l_sram_wdata_b;
 
+assign test_layer_finish = (state == END);
 always @* begin 
     n_sram_raddr_a0 = lsram_raddr_a0;
     n_sram_raddr_a1 = lsram_raddr_a1;
@@ -139,8 +146,6 @@ always @* begin
     nl_sram_a_wen = l_sram_a_wen;
     if(state <= UNSHUFFLE )  
         nl_sram_a_wen = unshuffle_nl_sram_wen;
-    else 
-        nl_sram_b_wen = 4'b1111;
 
     nl_sram_b_wen = l_sram_b_wen;
     if(state == CONV1) begin 
@@ -151,13 +156,30 @@ always @* begin
     if(state <= UNSHUFFLE) begin 
         nl_sram_bytemask_a = unsh_n_sram_bytemask_a;
     end 
+
+    nl_sram_bytemask_b = l_sram_bytemask_b;
+    if(state >= CONV1) begin 
+        nl_sram_bytemask_b = conv1_n_sram_bytemask_b;
+    end 
+    
     nl_sram_waddr_a = l_sram_waddr_a;
     if(state <= UNSHUFFLE) begin 
         nl_sram_waddr_a = unsh_n_sram_waddr_a;
     end 
+
+    nl_sram_waddr_b = l_sram_waddr_b;
+    if(state >= CONV1) begin 
+        nl_sram_waddr_b = conv1_n_sram_waddr_b;
+    end 
+
     nl_sram_wdata_a = l_sram_wdata_a;
     if(state <= UNSHUFFLE) begin 
         nl_sram_wdata_a = unsh_n_sram_wdata_a;
+    end 
+
+    nl_sram_wdata_b = l_sram_wdata_b;
+    if(state >= CONV1) begin 
+        nl_sram_wdata_b = conv1_n_sram_wdata_b;
     end 
         
     nsram_raddr_weight = lsram_raddr_weight;
@@ -169,6 +191,11 @@ always @* begin
         nraddr_bias = shuffle_n_raddr_bias;
         wr_b = shuffle_wr_b;
         wr_w = shuffle_wr_w;
+    end else if(state == CONV1) begin 
+        nsram_raddr_weight = conv1_n_raddr_weight;
+        nraddr_bias = conv1_n_raddr_bias;
+        wr_b = conv1_wr_b;
+        wr_w = conv1_wr_w;
     end 
 end 
 
@@ -200,8 +227,8 @@ myUnshuffle (
 integer chi, chj;
 always @(posedge clk) begin 
     if(!rst_n) begin 
-        l_sram_a_wen <= 4'b0;
-        l_sram_b_wen <= 4'b0;
+        l_sram_a_wen <= 4'b1111;
+        l_sram_b_wen <= 4'b1111;
         l_sram_bytemask_a <= {CH_NUM*ACT_PER_ADDR{1'b1}};
         l_sram_waddr_a <= 0;
         l_sram_wdata_a <= 0;
@@ -222,8 +249,12 @@ always @(posedge clk) begin
         l_sram_a_wen <= nl_sram_a_wen;
         l_sram_b_wen <= nl_sram_b_wen;
         l_sram_bytemask_a <= nl_sram_bytemask_a;
+        l_sram_bytemask_b <= nl_sram_bytemask_b;
         l_sram_waddr_a <= nl_sram_waddr_a;
+        l_sram_waddr_b <= nl_sram_waddr_b;
         l_sram_wdata_a <= nl_sram_wdata_a;
+        l_sram_wdata_b <= nl_sram_wdata_b;
+        
         state <= nstate;
         if(state == END)
             lvalid <= 1;
@@ -231,45 +262,17 @@ always @(posedge clk) begin
         lsram_raddr_weight <= nsram_raddr_weight;
         lraddr_bias <= nraddr_bias;
 
-        if(state == CONV1) begin 
-            $display("%d %d %d %d", pipe3_c0,pipe3_c1,pipe3_c2,pipe3_c3);
-            // $display("row col: %d %d", myconv1.row, myconv1.col);
-            // for(chi = 0; chi < 12; chi = chi + 1) begin 
-            //     $write("%d,",nmul_c3[chi]);
-            // end 
-            // $write("\n");
-            // for(chj = 0; chj < 16; chj = chj + 1) begin 
-            //     $write("%d,", tmp_rdata_a0[chj]);
-            // end 
-            // $write("\n");
-            // for(chj = 0; chj < 16; chj = chj + 1) begin 
-            //     $write("%d,", tmp_rdata_a1[chj]);
-            // end 
-            // $write("\n");
-            // for(chj = 0; chj < 16; chj = chj + 1) begin 
-            //     $write("%d,", tmp_rdata_a2[chj]);
-            // end 
-            // $write("\n");
-            // for(chj = 0; chj < 16; chj = chj + 1) begin 
-            //     $write("%d,", tmp_rdata_a3[chj]);
-            // end 
-            // $write("\n");
-            // $display(":%h %h", sram_rdata_a0, n_tmp_a0);
-            // $display(":%h %h", sram_rdata_a1, n_tmp_a1);
-            // $display(":%h %h", sram_rdata_a2, n_tmp_a2);
-            // $display(":%h %h", sram_rdata_a3, n_tmp_a3);
-            
-        end 
-        if(state == END) begin 
-            $display("weight::");
-            for(chi = 0; chi < 4; chi = chi + 1) begin 
-                for(chj = 0; chj < 9; chj = chj + 1) begin 
-                    $write("%d,", local_weight[chi*9+chj]);
-                end 
-                $write("\n");
-            end
-            $display("bias:  %d", local_bias);
-        end 
+        
+        // if(state == END) begin 
+        //     $display("weight::");
+        //     for(chi = 0; chi < 4; chi = chi + 1) begin 
+        //         for(chj = 0; chj < 9; chj = chj + 1) begin 
+        //             $write("%d,", local_weight[chi*9+chj]);
+        //         end 
+        //         $write("\n");
+        //     end
+        //     $display("bias:  %d", local_bias);
+        // end 
     end 
 end 
 always @* begin 
@@ -286,10 +289,10 @@ always @* begin
     end 
 end 
 
-reg [BW_PER_PARAM-1:0] pipe3_c0;
-reg [BW_PER_PARAM-1:0] pipe3_c1;
-reg [BW_PER_PARAM-1:0] pipe3_c2;
-reg [BW_PER_PARAM-1:0] pipe3_c3;
+reg [BW_PER_ACT-1:0] pipe3_c0;
+reg [BW_PER_ACT-1:0] pipe3_c1;
+reg [BW_PER_ACT-1:0] pipe3_c2;
+reg [BW_PER_ACT-1:0] pipe3_c3;
 
 Conv1 #(
 .CH_NUM(CH_NUM),
@@ -321,11 +324,15 @@ myconv1(
 .n_sram_waddr_b(conv1_n_sram_waddr_b),
 // write data to SRAM group B
 .n_sram_wdata_b(conv1_n_sram_wdata_b),
+.n_sram_wen(conv1_nl_sram_wen),
 .n_tmp_a0(conv1_n_tmp_a0),
 .n_tmp_a1(conv1_n_tmp_a1),
 .n_tmp_a2(conv1_n_tmp_a2),
-.n_tmp_a3(conv1_n_tmp_a3)
-
+.n_tmp_a3(conv1_n_tmp_a3),
+.n_raddr_weight(conv1_n_raddr_weight),
+.n_raddr_bias(conv1_n_raddr_bias),
+.wr_w(conv1_wr_b),
+.wr_b(conv1_wr_w)
 );
 
 
@@ -501,6 +508,49 @@ always @(posedge clk) begin
         pipe2_c2 <= nmul2_c2; pipe3_c2 <= nmul3_2_c2[7:0]; 
         pipe2_c3 <= nmul2_c3; pipe3_c3 <= nmul3_2_c3[7:0];
 
+        if(state == CONV1) begin 
+            if(myconv1.row == 0 && myconv1.col == 1) begin 
+            $display("weight:::");
+            for(chi = 0; chi < 4; chi = chi + 1) begin 
+                for(chj = 0; chj < 9; chj = chj + 1) begin 
+                    $write("%d,", local_weight[chi*9+chj]);
+                end 
+                $write("\n");
+            end
+            end 
+            // $display(";%b, %d", l_sram_b_wen, myconv1.ch);
+            // $display("%d %d %d %d", pipe3_c0,pipe3_c1,pipe3_c2,pipe3_c3);
+            // $display("addrb: %d mask: %b\ndata: %h",l_sram_waddr_b, l_sram_bytemask_b, l_sram_wdata_b);
+            // $display(",%h", conv1_n_sram_wdata_b);
+        //     $display("-- %d:%d:%d", nmul3_1_c2,nmul3_c2,pipe2_c2);
+            // $display("%d %d %d %d", pipe3_c0,pipe3_c1,pipe3_c2,pipe3_c3);
+            // $display(":%d:%d:%d", nmul3_1_c2,nmul3_c2,pipe2_c2);
+            // $display("row col: %d %d", myconv1.row, myconv1.col);
+            // for(chi = 0; chi < 12; chi = chi + 1) begin 
+            //     $write("%d,",nmul_c3[chi]);
+            // end 
+            // $write("\n");
+            // for(chj = 0; chj < 16; chj = chj + 1) begin 
+            //     $write("%d,", tmp_rdata_a0[chj]);
+            // end 
+            // $write("\n");
+            // for(chj = 0; chj < 16; chj = chj + 1) begin 
+            //     $write("%d,", tmp_rdata_a1[chj]);
+            // end 
+            // $write("\n");
+            // for(chj = 0; chj < 16; chj = chj + 1) begin 
+            //     $write("%d,", tmp_rdata_a2[chj]);
+            // end 
+            // $write("\n");
+            // for(chj = 0; chj < 16; chj = chj + 1) begin 
+            //     $write("%d,", tmp_rdata_a3[chj]);
+            // end 
+            // $write("\n");
+            // $display(":%h %h", sram_rdata_a0, n_tmp_a0);
+            // $display(":%h %h", sram_rdata_a1, n_tmp_a1);
+            // $display(":%h %h", sram_rdata_a2, n_tmp_a2);
+            // $display(":%h %h", sram_rdata_a3, n_tmp_a3);
+        end
     end 
 end 
 
@@ -622,11 +672,10 @@ always @* begin
     nmul3_1_c2 = {nmul3_c2[11],nmul3_c2[11],nmul3_c2[11],nmul3_c2[11],nmul3_c2[11],nmul3_c2[11],nmul3_c2[11], nmul3_c2[11:7]};
     nmul3_1_c3 = {nmul3_c3[11],nmul3_c3[11],nmul3_c3[11],nmul3_c3[11],nmul3_c3[11],nmul3_c3[11],nmul3_c3[11], nmul3_c3[11:7]};
 
-    nmul3_2_c0 = (nmul3_1_c0 >= 12'd127) ? 12'd127 : ((nmul3_1_c0 < 0) ? 0 : nmul3_1_c0);
-    nmul3_2_c1 = (nmul3_1_c1 >= 12'd127) ? 12'd127 : ((nmul3_1_c1 < 0) ? 0 : nmul3_1_c1);
-    nmul3_2_c2 = (nmul3_1_c2 >= 12'd127) ? 12'd127 : ((nmul3_1_c2 < 0) ? 0 : nmul3_1_c2);
-    nmul3_2_c3 = (nmul3_1_c3 >= 12'd127) ? 12'd127 : ((nmul3_1_c3 < 0) ? 0 : nmul3_1_c3);
-
+    nmul3_2_c0 = (nmul3_1_c0[11] == 1) ? 0 : ((nmul3_1_c0 >= 12'd127) ? 12'd127 : nmul3_1_c0);//(nmul3_1_c0 >= 12'd127) ? 12'd127 : ((nmul3_1_c0 < 0) ? 0 : nmul3_1_c0);
+    nmul3_2_c1 = (nmul3_1_c1[11] == 1) ? 0 : ((nmul3_1_c1 >= 12'd127) ? 12'd127 : nmul3_1_c1);//(nmul3_1_c1 >= 12'd127) ? 12'd127 : ((nmul3_1_c1 < 0) ? 0 : nmul3_1_c1);
+    nmul3_2_c2 = (nmul3_1_c2[11] == 1) ? 0 : ((nmul3_1_c2 >= 12'd127) ? 12'd127 : nmul3_1_c2);//(nmul3_1_c2 >= 12'd127) ? 12'd127 : ((nmul3_1_c2 < 0) ? 0 : nmul3_1_c2);
+    nmul3_2_c3 = (nmul3_1_c3[11] == 1) ? 0 : ((nmul3_1_c3 >= 12'd127) ? 12'd127 : nmul3_1_c3);//(nmul3_1_c3 >= 12'd127) ? 12'd127 : ((nmul3_1_c3 < 0) ? 0 : nmul3_1_c3);
 end 
 
 
