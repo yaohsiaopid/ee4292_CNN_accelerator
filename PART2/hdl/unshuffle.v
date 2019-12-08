@@ -20,9 +20,15 @@ output [CH_NUM*ACT_PER_ADDR-1:0] n_sram_bytemask_a,
 //write addrress to SRAM group A 
 output [5:0] n_sram_waddr_a,
 //write data to SRAM group A 
-output [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] n_sram_wdata_a
+output [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] n_sram_wdata_a,
 
+output [10:0] n_raddr_weight,
+output [6:0]  n_raddr_bias,
+output reg wr_w,
+output reg wr_b
 );
+reg [10:0] l_raddr_weight;
+reg [6:0] l_raddr_bias;
 
 localparam IDLE=2'd0, ACT=2'd1, END=2'd2;
 reg [4:0] row, nrow, prev_row;
@@ -34,6 +40,8 @@ reg [BW_PER_ACT-1:0] tmp[0:3];
 reg [1:0] idx, nidx,prev_idx; // 0 - 3
 // idx:  input data just went into ff correspond to idx
 reg [2:0] cnt, ncnt, prev_cnt;
+assign n_raddr_weight = {cnt, 2'b00} + idx;
+assign n_raddr_bias = 0;
 assign busy = l_busy;
 assign valid = l_valid;
 reg [CH_NUM*ACT_PER_ADDR-1:0]  nl_sram_bytemask_a;
@@ -44,7 +52,7 @@ reg [3:0] nl_sram_wen;
 // assign sram_bytemask_a = l_sram_bytemask_a;
 // assign sram_waddr_a = l_sram_waddr_a;
 // assign sram_wdata_a = l_sram_wdata_a;
-reg [1:0] nbank_num;
+wire [1:0] nbank_num;
 assign n_sram_bytemask_a = nl_sram_bytemask_a;
 assign n_sram_waddr_a = nl_sram_waddr_a;
 assign n_sram_wdata_a = nl_sram_wdata_a;
@@ -61,9 +69,8 @@ always @* begin
     endcase
   end 
 end 
-
-always @* begin 
-  nbank_num = {prev_row[2], prev_cnt[0]}; // ((r % 8) / 4) * 2 + cnt % 2
+assign nbank_num = {prev_row[2], prev_cnt[0]}; // ((r % 8) / 4) * 2 + cnt % 2
+always @* begin  
   nl_sram_waddr_a = 6 * prev_row[4:3] + prev_cnt[2:1];// 6 * (r/8) + (cnt / 2);
   case(prev_row[1:0]) 
     2'd0: nl_sram_wdata_a = {tmp[0],tmp[2],{2*BW_PER_ACT{1'b0}},tmp[1],tmp[3],{10*BW_PER_ACT{1'b0}}};
@@ -97,14 +104,19 @@ always @(posedge clk) begin
     state <= IDLE;
     row <= 0;   idx <= 0;   cnt <= 0; 
     tmp[0] <= 0; tmp[1] <= 0; tmp[2] <= 0; tmp[3] <= 0; 
-    // l_sram_bytemask_a <= {CH_NUM*ACT_PER_ADDR{1'b1}};
-    // l_sram_waddr_a <= 0;
-    // l_sram_wdata_a <= 0;
+    wr_w <= 1;
+    wr_b <= 1;
     l_valid <= 0;
     prev_row <= 0; prev_cnt <= 0; prev_idx <= 0;
   end else begin 
     l_enable <= enable;
     l_busy <= ~l_enable;
+    if(l_enable && cnt == 1 && idx == 1) begin 
+      // $display("wrasdr shuf: %d",n_raddr_weight); 
+      wr_w <= 0;
+      wr_b <= 0;
+    end
+    
     if(l_enable && state != END) begin 
     //   $display("row: %d  cnt: %d idx: %d %b", row,cnt, idx, input_data);
       tmp[3] <= input_data; // take in input data to tmp!
