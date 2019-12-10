@@ -508,7 +508,8 @@ always @(posedge clk) begin
             //         $write("\n");
             //     end
             // end 
-            // $display(";%b, %d", l_sram_b_wen, myconv1.ch);
+            $display("---------------------");
+            $display(";%b, %d, (%d %d)", l_sram_b_wen, myconv1.ch, myconv1.wbrow, myconv1.wbcnt);
             if(myconv1.row == 0 && myconv1.col <= 3)  begin
                 $display("==========================="); 
                 $display("bias: %d", bias_shift);
@@ -523,11 +524,12 @@ always @(posedge clk) begin
             end 
             $display("%d %d %d %d", pipe3_c0,pipe3_c1,pipe3_c2,pipe3_c3);
             // $display("bias: %h", bias_shift);
-            // $display("addrb: %d mask: %b\ndata: %h",l_sram_waddr_b, l_sram_bytemask_b, l_sram_wdata_b);
+            $display("addrb: %d mask: %b\ndata: %h",l_sram_waddr_b, l_sram_bytemask_b, l_sram_wdata_b);
             // $display(",%h", conv1_n_sram_wdata_b);
             // $display("- %d:%d:%d:%d", pipe2_c3,nmul3_c3,nmul3_1_c3,pipe2_c3);
             
-            // $display("row col: %d %d; %d %d %d %d", myconv1.row, myconv1.col, sram_raddr_a0, sram_raddr_a1, sram_raddr_a2, sram_raddr_a3);
+            $display("row col: %d %d; %d %d %d %d", myconv1.row, myconv1.col, sram_raddr_a0, sram_raddr_a1, sram_raddr_a2, sram_raddr_a3);
+            $display("---------------------");
             // $display("nsram addr: %d %d %d %d", myconv1.n_sram_raddr_a0, myconv1.n_sram_raddr_a1, myconv1.n_sram_raddr_a2, myconv1.n_sram_raddr_a3); 
             // for(chi = 0; chi < 36; chi = chi + 1) begin 
             //     $write("%d,",tmp_c3[chi]);

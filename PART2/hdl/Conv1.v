@@ -74,7 +74,10 @@ always @* begin
     nwbcnt = wbcnt;
     nwbrow = wbrow;
     if(ready) begin 
-        if(nwbcnt == 5) begin
+        if(wbcnt == 5) begin
+            if(wbrow == 5) 
+            nwbrow = 0;
+            else 
             nwbrow = wbrow + 1;
             nwbcnt = 0;
         end else begin 
@@ -84,7 +87,7 @@ always @* begin
     end 
 
     nbank_num = {wbrow[0], wbcnt[0]};
-    nl_sram_waddr_b = 6 * wbrow[2:0] + wbcnt[2:1]; // 6 * r/2 + cnt/2
+    nl_sram_waddr_b = 6 * wbrow[2:1] + wbcnt[2:1]; // 6 * r/2 + cnt/2
     case(ch)
         2'd0: nl_sram_wdata_b = {pipe3_c0,pipe3_c1,pipe3_c2, pipe3_c3,{12*BW_PER_ACT{1'b0}}};
         2'd1: nl_sram_wdata_b = {{4*BW_PER_ACT{1'b0}},pipe3_c0,pipe3_c1,pipe3_c2, pipe3_c3,{8*BW_PER_ACT{1'b0}}};
@@ -161,7 +164,7 @@ always @* begin
         case(state) 
             IDLE: nstate = ACT; //PREP;
             PREP: nstate = ACT;
-            ACT: nstate = (ch == 3 && row == 5 && col == 5 && tmpcnt == 2) ? END : ACT;
+            ACT: nstate = (ch == 3 && row == 5 && col == 5 && tmpcnt == 3) ? END : ACT;
             END: nstate = END;
         endcase
     end
@@ -220,9 +223,9 @@ always @(posedge clk) begin
             delay <= 1;
         else 
             delay <= 0;
-        if(!ready && col == 2) begin 
+        if(!ready && col == 3) begin 
             ready <= 1;
-        end else if(row == 5 && tmpcnt == 3) begin 
+        end else if(row == 5 && tmpcnt == 4) begin 
             ready <= 0;
             ch <= ch + 1;
         end 
