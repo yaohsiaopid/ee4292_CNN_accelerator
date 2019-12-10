@@ -65,7 +65,8 @@ reg ready;
 reg [2:0] wbcnt, nwbcnt;
 reg [2:0] wbrow, nwbrow; 
 reg [1:0] nbank_num;
-reg [1:0] tmpcnt, ntmpcnt;
+reg [2:0] tmpcnt, ntmpcnt;
+reg delay;
 assign n_raddr_weight = l_raddr_weight;// + 1;
 assign n_raddr_bias = l_raddr_bias;// + 1;
 always @* begin 
@@ -119,36 +120,46 @@ always @* begin
         nl_sram_raddr_a2 = 6 * (row[2:1] + 1) - 6 * (row[0] == 0); 
         nl_sram_raddr_a3 = 6 * (row[2:1] + 1) - 6 * (row[0] == 0);
         end else begin 
-            nl_sram_raddr_a0 = l_sram_raddr_a0 + (mode == 0); nl_sram_raddr_a1 = l_sram_raddr_a1 + (mode == 1);
-            nl_sram_raddr_a2 = l_sram_raddr_a2 + (mode == 0); nl_sram_raddr_a3 = l_sram_raddr_a3 + (mode == 1);
+            if(row == 5 && col == 5) begin 
+                    nl_sram_raddr_a0 = 0; nl_sram_raddr_a1 = 0;
+                    nl_sram_raddr_a2 = 0; nl_sram_raddr_a3 = 0;
+            end else begin
+                nl_sram_raddr_a0 = l_sram_raddr_a0 + (mode == 0); nl_sram_raddr_a1 = l_sram_raddr_a1 + (mode == 1);
+                nl_sram_raddr_a2 = l_sram_raddr_a2 + (mode == 0); nl_sram_raddr_a3 = l_sram_raddr_a3 + (mode == 1);
+            end
         end 
     end
 
     ntmpcnt = tmpcnt;
     if(state == ACT && row == 5 && col == 5) begin 
-        ntmpcnt = tmpcnt + 1;
+        if(tmpcnt == 6) 
+            ntmpcnt = 0;
+        else 
+            ntmpcnt = tmpcnt + 1;
     end 
     
     nrow = row; ncol = col; nch = ch; 
     if(state == ACT) begin 
-        if(row == 5 && col == 5) begin 
-            if(tmpcnt == 3) begin 
-                nrow = 0; ncol = 0;
-            end
-        end else begin 
-            if(col == 5) begin 
-                ncol = 0;   nrow = row + 1;
+        if(col == 5) begin 
+            if(row == 5) begin 
+                if(tmpcnt == 6) begin   ncol = 0; nrow = 0; end 
+                else begin ncol = col; nrow = row; end 
             end else begin 
-                ncol = col + 1; nrow = row; 
+                ncol = 0;   nrow = row + 1;
             end 
-        end 
-           
+        end else begin 
+            if(!delay && row == 0 && col == 0) begin 
+                nrow = row; ncol = 0;
+            end else begin 
+             ncol = col + 1; nrow = row;
+            end 
+        end   
     end 
     if(!enable) begin 
         nstate = IDLE;
     end else begin
         case(state) 
-            IDLE: nstate = PREP;
+            IDLE: nstate = ACT; //PREP;
             PREP: nstate = ACT;
             ACT: nstate = (ch == 3 && row == 5 && col == 5 && tmpcnt == 2) ? END : ACT;
             END: nstate = END;
@@ -198,26 +209,35 @@ always @(posedge clk) begin
         l_raddr_bias <= 1;
         // prev_row <= 0; prev_cnt <= 0; prev_idx <= 0;
         // row <= 0;   idx <= 0;   cnt <= 0; 
+        delay <= 0;
     end else begin 
         state <= nstate;
         row <= nrow; col <= ncol; //ch <= nch;
         tmpcnt <= ntmpcnt;
         l_sram_raddr_a0 <= nl_sram_raddr_a0; l_sram_raddr_a1 <= nl_sram_raddr_a1;
         l_sram_raddr_a2 <= nl_sram_raddr_a2; l_sram_raddr_a3 <= nl_sram_raddr_a3;
+        if(!delay && row == 0 && col == 0)  
+            delay <= 1;
+        else 
+            delay <= 0;
         if(!ready && col == 2) begin 
             ready <= 1;
-        end else if(row == 5 && tmpcnt == 2) begin 
+        end else if(row == 5 && tmpcnt == 3) begin 
             ready <= 0;
             ch <= ch + 1;
         end 
 
-        if(state == ACT && row == 5 && col >= 4) begin 
-            if(tmpcnt < 3) begin 
-            l_raddr_weight <= l_raddr_weight + 1;
-            l_raddr_bias <= l_raddr_bias + 1;
+        if(state == ACT && row == 5 && col == 5) begin 
+            if(tmpcnt > 1) begin 
+                wr_b <= 1;
+                wr_w <= 1;
+                if(tmpcnt < 6) begin 
+                    l_raddr_weight <= l_raddr_weight + 1;
+                end 
+            end
+            if(tmpcnt == 1) begin 
+                l_raddr_bias <= ch + 1;//l_raddr_bias + 1;
             end 
-            wr_b <= 1;
-            wr_w <= 1;
         end else begin 
             wr_b <= 0;
             wr_w <= 0;
@@ -225,8 +245,12 @@ always @(posedge clk) begin
 
         if(state == END) 
             valid <= 1;
+            
         if(state == PREP || state == ACT) begin 
-            mode <= !mode;
+            if(row == 5 && col == 5)
+                mode <= 0;
+            else 
+                mode <= !mode;
         end 
         wbcnt <= nwbcnt; wbrow <= nwbrow;
         // if(state == PREP || state == ACT) begin 

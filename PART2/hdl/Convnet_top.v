@@ -262,17 +262,6 @@ always @(posedge clk) begin
         lsram_raddr_weight <= nsram_raddr_weight;
         lraddr_bias <= nraddr_bias;
 
-        
-        // if(state == END) begin 
-        //     $display("weight::");
-        //     for(chi = 0; chi < 4; chi = chi + 1) begin 
-        //         for(chj = 0; chj < 9; chj = chj + 1) begin 
-        //             $write("%d,", local_weight[chi*9+chj]);
-        //         end 
-        //         $write("\n");
-        //     end
-        //     $display("bias:  %d", local_bias);
-        // end 
     end 
 end 
 always @* begin 
@@ -351,20 +340,20 @@ reg signed [BW_PER_ACT-1:0] tmp_rdata_a1[0:CH_NUM*ACT_PER_ADDR-1];
 reg signed [BW_PER_ACT-1:0] tmp_rdata_a2[0:CH_NUM*ACT_PER_ADDR-1];
 reg signed [BW_PER_ACT-1:0] tmp_rdata_a3[0:CH_NUM*ACT_PER_ADDR-1];
 reg signed [BW_PER_ACT-1:0] tmp_c0[0:WEIGHT_PER_ADDR*CH_NUM-1],tmp_c1[0:WEIGHT_PER_ADDR*CH_NUM-1], tmp_c2[0:WEIGHT_PER_ADDR*CH_NUM-1],tmp_c3[0:WEIGHT_PER_ADDR*CH_NUM-1];
-reg signed [BW_PER_ACT+BW_PER_PARAM-1:0] pipe1_c0[0:12-1], nmul_c0[0:12-1]; //3 * 4 - 1
-reg signed [BW_PER_ACT+BW_PER_PARAM-1:0] pipe1_c1[0:12-1], nmul_c1[0:12-1]; //3 * 4 - 1
-reg signed [BW_PER_ACT+BW_PER_PARAM-1:0] pipe1_c2[0:12-1], nmul_c2[0:12-1]; //3 * 4 - 1
-reg signed [BW_PER_ACT+BW_PER_PARAM-1:0] pipe1_c3[0:12-1], nmul_c3[0:12-1]; //3 * 4 - 1
+reg signed [BW_PER_ACT+BW_PER_PARAM:0] pipe1_c0[0:12-1], nmul_c0[0:12-1]; //3 * 4 - 1
+reg signed [BW_PER_ACT+BW_PER_PARAM:0] pipe1_c1[0:12-1], nmul_c1[0:12-1]; //3 * 4 - 1
+reg signed [BW_PER_ACT+BW_PER_PARAM:0] pipe1_c2[0:12-1], nmul_c2[0:12-1]; //3 * 4 - 1
+reg signed [BW_PER_ACT+BW_PER_PARAM:0] pipe1_c3[0:12-1], nmul_c3[0:12-1]; //3 * 4 - 1
 
-reg signed [BW_PER_ACT+BW_PER_PARAM-1:0] pipe2_c0, nmul2_c0; //3 * 4 - 1
-reg signed [BW_PER_ACT+BW_PER_PARAM-1:0] pipe2_c1, nmul2_c1; //3 * 4 - 1
-reg signed [BW_PER_ACT+BW_PER_PARAM-1:0] pipe2_c2, nmul2_c2; //3 * 4 - 1
-reg signed [BW_PER_ACT+BW_PER_PARAM-1:0] pipe2_c3, nmul2_c3; //3 * 4 - 1
+reg signed [BW_PER_ACT+BW_PER_PARAM+3:0] pipe2_c0, nmul2_c0; //3 * 4 - 1
+reg signed [BW_PER_ACT+BW_PER_PARAM+3:0] pipe2_c1, nmul2_c1; //3 * 4 - 1
+reg signed [BW_PER_ACT+BW_PER_PARAM+3:0] pipe2_c2, nmul2_c2; //3 * 4 - 1
+reg signed [BW_PER_ACT+BW_PER_PARAM+3:0] pipe2_c3, nmul2_c3; //3 * 4 - 1
 
-reg signed [BW_PER_ACT+BW_PER_PARAM-1:0]  nmul3_c0, nmul3_1_c0, nmul3_2_c0;
-reg signed [BW_PER_ACT+BW_PER_PARAM-1:0]  nmul3_c1, nmul3_1_c1, nmul3_2_c1;
-reg signed [BW_PER_ACT+BW_PER_PARAM-1:0]  nmul3_c2, nmul3_1_c2, nmul3_2_c2;
-reg signed [BW_PER_ACT+BW_PER_PARAM-1:0]  nmul3_c3, nmul3_1_c3, nmul3_2_c3;
+reg signed [BW_PER_ACT+BW_PER_PARAM+3:0]  nmul3_c0, nmul3_1_c0, nmul3_2_c0;
+reg signed [BW_PER_ACT+BW_PER_PARAM+3:0]  nmul3_c1, nmul3_1_c1, nmul3_2_c1;
+reg signed [BW_PER_ACT+BW_PER_PARAM+3:0]  nmul3_c2, nmul3_1_c2, nmul3_2_c2;
+reg signed [BW_PER_ACT+BW_PER_PARAM+3:0]  nmul3_c3, nmul3_1_c3, nmul3_2_c3;
 
 
 
@@ -509,29 +498,44 @@ always @(posedge clk) begin
         pipe2_c3 <= nmul2_c3; pipe3_c3 <= nmul3_2_c3[7:0];
 
         if(state == CONV1) begin 
-            if(myconv1.row == 0 && myconv1.col == 1) begin 
-            $display("weight:::");
-            for(chi = 0; chi < 4; chi = chi + 1) begin 
-                for(chj = 0; chj < 9; chj = chj + 1) begin 
-                    $write("%d,", local_weight[chi*9+chj]);
-                end 
-                $write("\n");
-            end
-            end 
+            // DUMPP
+            // if(myconv1.row == 0 && myconv1.col == 1) begin 
+            //     $display("weight:::");
+            //     for(chi = 0; chi < 4; chi = chi + 1) begin 
+            //         for(chj = 0; chj < 9; chj = chj + 1) begin 
+            //             $write("%d,", local_weight[chi*9+chj]);
+            //         end 
+            //         $write("\n");
+            //     end
+            // end 
             // $display(";%b, %d", l_sram_b_wen, myconv1.ch);
-            // $display("%d %d %d %d", pipe3_c0,pipe3_c1,pipe3_c2,pipe3_c3);
+            if(myconv1.row == 0 && myconv1.col <= 3)  begin
+                $display("==========================="); 
+                $display("bias: %d", bias_shift);
+                $display("weight:::");
+                for(chi = 0; chi < 4; chi = chi + 1) begin 
+                    for(chj = 0; chj < 9; chj = chj + 1) begin 
+                        $write("%d,", local_weight[chi*9+chj]);
+                    end 
+                    // $write("\n");
+                end
+                $display("\n");
+            end 
+            $display("%d %d %d %d", pipe3_c0,pipe3_c1,pipe3_c2,pipe3_c3);
+            // $display("bias: %h", bias_shift);
             // $display("addrb: %d mask: %b\ndata: %h",l_sram_waddr_b, l_sram_bytemask_b, l_sram_wdata_b);
             // $display(",%h", conv1_n_sram_wdata_b);
-        //     $display("-- %d:%d:%d", nmul3_1_c2,nmul3_c2,pipe2_c2);
-            // $display("%d %d %d %d", pipe3_c0,pipe3_c1,pipe3_c2,pipe3_c3);
-            // $display(":%d:%d:%d", nmul3_1_c2,nmul3_c2,pipe2_c2);
-            // $display("row col: %d %d", myconv1.row, myconv1.col);
-            // for(chi = 0; chi < 12; chi = chi + 1) begin 
-            //     $write("%d,",nmul_c3[chi]);
+            // $display("- %d:%d:%d:%d", pipe2_c3,nmul3_c3,nmul3_1_c3,pipe2_c3);
+            
+            // $display("row col: %d %d; %d %d %d %d", myconv1.row, myconv1.col, sram_raddr_a0, sram_raddr_a1, sram_raddr_a2, sram_raddr_a3);
+            // $display("nsram addr: %d %d %d %d", myconv1.n_sram_raddr_a0, myconv1.n_sram_raddr_a1, myconv1.n_sram_raddr_a2, myconv1.n_sram_raddr_a3); 
+            // for(chi = 0; chi < 36; chi = chi + 1) begin 
+            //     $write("%d,",tmp_c3[chi]);
             // end 
-            // $write("\n");
-            // for(chj = 0; chj < 16; chj = chj + 1) begin 
-            //     $write("%d,", tmp_rdata_a0[chj]);
+            // $write("\n----------\n");
+
+            // for(chj = 0; chj < 12; chj = chj + 1) begin 
+            //     $write("%d,", nmul_c3[chj]);
             // end 
             // $write("\n");
             // for(chj = 0; chj < 16; chj = chj + 1) begin 
@@ -546,10 +550,10 @@ always @(posedge clk) begin
             //     $write("%d,", tmp_rdata_a3[chj]);
             // end 
             // $write("\n");
-            // $display(":%h %h", sram_rdata_a0, n_tmp_a0);
-            // $display(":%h %h", sram_rdata_a1, n_tmp_a1);
-            // $display(":%h %h", sram_rdata_a2, n_tmp_a2);
-            // $display(":%h %h", sram_rdata_a3, n_tmp_a3);
+            // $display(": %h %h",sram_rdata_a0, n_tmp_a0);
+            // $display(": %h %h",sram_rdata_a1, n_tmp_a1);
+            // $display(": %h %h",sram_rdata_a2, n_tmp_a2);
+            // $display(": %h %h",sram_rdata_a3, n_tmp_a3);
         end
     end 
 end 
@@ -644,7 +648,7 @@ always @* begin
 end 
 
 integer ci, cj;
-wire signed [BW_PER_ACT+BW_PER_PARAM-1:0] bias_shift = {local_bias[0],local_bias,7'd0};
+wire signed [BW_PER_ACT+BW_PER_PARAM+3:0] bias_shift = {local_bias[BW_PER_PARAM-1],local_bias[BW_PER_PARAM-1],local_bias[BW_PER_PARAM-1],local_bias[BW_PER_PARAM-1],local_bias[BW_PER_PARAM-1],local_bias,7'd0};
 always @* begin 
     for(ci = 0; ci < 12; ci = ci + 1) begin 
         nmul_c0[ci] = tmp_c0[3*ci] * local_weight[3*ci] + tmp_c0[3*ci+1] * local_weight[3*ci+1] + tmp_c0[3*ci+2] * local_weight[3*ci+2];
@@ -667,15 +671,15 @@ end
 
 always @* begin 
 
-    nmul3_1_c0 = {nmul3_c0[11],nmul3_c0[11],nmul3_c0[11],nmul3_c0[11],nmul3_c0[11],nmul3_c0[11],nmul3_c0[11], nmul3_c0[11:7]};
-    nmul3_1_c1 = {nmul3_c1[11],nmul3_c1[11],nmul3_c1[11],nmul3_c1[11],nmul3_c1[11],nmul3_c1[11],nmul3_c1[11], nmul3_c1[11:7]};
-    nmul3_1_c2 = {nmul3_c2[11],nmul3_c2[11],nmul3_c2[11],nmul3_c2[11],nmul3_c2[11],nmul3_c2[11],nmul3_c2[11], nmul3_c2[11:7]};
-    nmul3_1_c3 = {nmul3_c3[11],nmul3_c3[11],nmul3_c3[11],nmul3_c3[11],nmul3_c3[11],nmul3_c3[11],nmul3_c3[11], nmul3_c3[11:7]};
+    nmul3_1_c0 = {nmul3_c0[15],nmul3_c0[15],nmul3_c0[15],nmul3_c0[15],nmul3_c0[15],nmul3_c0[15],nmul3_c0[15], nmul3_c0[15:7]};
+    nmul3_1_c1 = {nmul3_c1[15],nmul3_c1[15],nmul3_c1[15],nmul3_c1[15],nmul3_c1[15],nmul3_c1[15],nmul3_c1[15], nmul3_c1[15:7]};
+    nmul3_1_c2 = {nmul3_c2[15],nmul3_c2[15],nmul3_c2[15],nmul3_c2[15],nmul3_c2[15],nmul3_c2[15],nmul3_c2[15], nmul3_c2[15:7]};
+    nmul3_1_c3 = {nmul3_c3[15],nmul3_c3[15],nmul3_c3[15],nmul3_c3[15],nmul3_c3[15],nmul3_c3[15],nmul3_c3[15], nmul3_c3[15:7]};
 
-    nmul3_2_c0 = (nmul3_1_c0[11] == 1) ? 0 : ((nmul3_1_c0 >= 12'd127) ? 12'd127 : nmul3_1_c0);//(nmul3_1_c0 >= 12'd127) ? 12'd127 : ((nmul3_1_c0 < 0) ? 0 : nmul3_1_c0);
-    nmul3_2_c1 = (nmul3_1_c1[11] == 1) ? 0 : ((nmul3_1_c1 >= 12'd127) ? 12'd127 : nmul3_1_c1);//(nmul3_1_c1 >= 12'd127) ? 12'd127 : ((nmul3_1_c1 < 0) ? 0 : nmul3_1_c1);
-    nmul3_2_c2 = (nmul3_1_c2[11] == 1) ? 0 : ((nmul3_1_c2 >= 12'd127) ? 12'd127 : nmul3_1_c2);//(nmul3_1_c2 >= 12'd127) ? 12'd127 : ((nmul3_1_c2 < 0) ? 0 : nmul3_1_c2);
-    nmul3_2_c3 = (nmul3_1_c3[11] == 1) ? 0 : ((nmul3_1_c3 >= 12'd127) ? 12'd127 : nmul3_1_c3);//(nmul3_1_c3 >= 12'd127) ? 12'd127 : ((nmul3_1_c3 < 0) ? 0 : nmul3_1_c3);
+    nmul3_2_c0 = (nmul3_1_c0[15] == 1) ? 0 : ((nmul3_1_c0 >= 13'd127) ? 12'd127 : nmul3_1_c0);//(nmul3_1_c0 >= 12'd127) ? 12'd127 : ((nmul3_1_c0 < 0) ? 0 : nmul3_1_c0);
+    nmul3_2_c1 = (nmul3_1_c1[15] == 1) ? 0 : ((nmul3_1_c1 >= 13'd127) ? 12'd127 : nmul3_1_c1);//(nmul3_1_c1 >= 12'd127) ? 12'd127 : ((nmul3_1_c1 < 0) ? 0 : nmul3_1_c1);
+    nmul3_2_c2 = (nmul3_1_c2[15] == 1) ? 0 : ((nmul3_1_c2 >= 13'd127) ? 12'd127 : nmul3_1_c2);//(nmul3_1_c2 >= 12'd127) ? 12'd127 : ((nmul3_1_c2 < 0) ? 0 : nmul3_1_c2);
+    nmul3_2_c3 = (nmul3_1_c3[15] == 1) ? 0 : ((nmul3_1_c3 >= 13'd127) ? 12'd127 : nmul3_1_c3);//(nmul3_1_c3 >= 12'd127) ? 12'd127 : ((nmul3_1_c3 < 0) ? 0 : nmul3_1_c3);
 end 
 
 
