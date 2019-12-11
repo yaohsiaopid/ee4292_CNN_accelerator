@@ -87,14 +87,14 @@ always @* begin
     end 
 
     nbank_num = {wbrow[0], wbcnt[0]};
-    nl_sram_waddr_a = 6 * wbrow[2:1] + wbcnt[2:1]; // 6 * r/2 + cnt/2
-    case(ch)
+    nl_sram_waddr_a = 18 * ch[3] + 3 * ch[2] + 6 * wbrow[2:1] + wbcnt[2:1]; // 6 * r/2 + cnt/2
+    case(ch[1:0])
         2'd0: nl_sram_wdata_a = {pipe3_c0,pipe3_c1,pipe3_c2, pipe3_c3,{12*BW_PER_ACT{1'b0}}};
         2'd1: nl_sram_wdata_a = {{4*BW_PER_ACT{1'b0}},pipe3_c0,pipe3_c1,pipe3_c2, pipe3_c3,{8*BW_PER_ACT{1'b0}}};
         2'd2: nl_sram_wdata_a = {{8*BW_PER_ACT{1'b0}},pipe3_c0,pipe3_c1,pipe3_c2, pipe3_c3,{4*BW_PER_ACT{1'b0}}};
         2'd3: nl_sram_wdata_a = {{12*BW_PER_ACT{1'b0}},pipe3_c0,pipe3_c1,pipe3_c2, pipe3_c3};
     endcase
-    case(ch) 
+    case(ch[1:0]) 
         2'd0: nl_sram_bytemask_a = {1'b0,1'b0,1'b0,1'b0,{12{1'b1}}};
         2'd1: nl_sram_bytemask_a = {{4{1'b1}},1'b0,1'b0,1'b0,1'b0,{8{1'b1}}};
         2'd2: nl_sram_bytemask_a = {{8{1'b1}},1'b0,1'b0,1'b0,1'b0,{4{1'b1}}};
@@ -169,7 +169,7 @@ always @* begin
         case(state) 
             IDLE: nstate = PREP; 
             PREP: nstate = (tmpcnt == 5) ? ACT : PREP;
-            ACT: nstate = (ch == 5 && row == 4 && col == 4 && tmpcnt == 2) ? END : ACT;
+            ACT: nstate = (ch == 15 && row == 4 && col == 4 && tmpcnt == 3) ? END : ACT;
             END: nstate = END;
         endcase
     end
@@ -226,7 +226,7 @@ always @(posedge clk) begin
             delay <= 1;
         else 
             delay <= 0;
-        if(!ready && col == 2) begin 
+        if(!ready && col == 3) begin 
             ready <= 1;
         end else if(row == 4 && tmpcnt == 4) begin 
             ready <= 0;
@@ -245,10 +245,11 @@ always @(posedge clk) begin
                 end 
             end
             if(tmpcnt == 1) begin 
-                l_raddr_bias <= ch + 1;
+                l_raddr_bias <= l_raddr_bias + 1;
             end 
         end else if(state == PREP) begin
-            l_raddr_weight <= l_raddr_weight + 1;
+            if(tmpcnt < 4)
+                l_raddr_weight <= l_raddr_weight + 1;
             if(tmpcnt == 5) begin
                 wr_b <= 0;
                 wr_w <= 0; 
@@ -263,6 +264,8 @@ always @(posedge clk) begin
             
         if(state == ACT) begin 
             if(col == 3)
+                mode <= 0;
+            else if(row == 4 && col == 4)
                 mode <= 0;
             else 
                 mode <= !mode;

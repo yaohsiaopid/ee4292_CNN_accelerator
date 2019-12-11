@@ -378,7 +378,7 @@ myconv2(
 // write addrress to SRAM group B
 .n_sram_waddr_a(conv2_n_sram_waddr_a),
 // write data to SRAM group B
-.n_sram_wdata_a(conv1_n_sram_wdata_a),
+.n_sram_wdata_a(conv2_n_sram_wdata_a),
 .n_sram_wen(conv2_nl_sram_wen),
 .n_tmp_b0(conv2_n_tmp_b0),
 .n_tmp_b1(conv2_n_tmp_b1),
@@ -487,73 +487,39 @@ always @(posedge clk) begin
         //         tmp_rdata_a3[4*j+i] <= n_tmp_a3[(CH_NUM-j)*ACT_PER_ADDR*BW_PER_ACT-1-i*BW_PER_ACT:(CH_NUM-j)*ACT_PER_ADDR*BW_PER_ACT-(i+1)*BW_PER_ACT]; 
         //     end 
         // end 
-        tmp_rdata_a0[0] <=   n_tmp_a0[127:120];
-        tmp_rdata_a0[1] <=   n_tmp_a0[119:112];
-        tmp_rdata_a0[2] <=   n_tmp_a0[111:104];
-        tmp_rdata_a0[3] <=   n_tmp_a0[103:96];
-        tmp_rdata_a0[4] <=   n_tmp_a0[95:88];
-        tmp_rdata_a0[5] <=   n_tmp_a0[87:80];
-        tmp_rdata_a0[6] <=   n_tmp_a0[79:72];
-        tmp_rdata_a0[7] <=   n_tmp_a0[71:64];
-        tmp_rdata_a0[8] <=   n_tmp_a0[63:56];
-        tmp_rdata_a0[9] <=   n_tmp_a0[55:48];
-        tmp_rdata_a0[10] <=  n_tmp_a0[47:40];
-        tmp_rdata_a0[11] <=  n_tmp_a0[39:32];
-        tmp_rdata_a0[12] <=  n_tmp_a0[31:24];
-        tmp_rdata_a0[13] <=  n_tmp_a0[23:16];
-        tmp_rdata_a0[14] <=  n_tmp_a0[15:8];
-        tmp_rdata_a0[15] <=  n_tmp_a0[7:0];
+        tmp_rdata_a1[0] <=   n_tmp_a1[127:120];      tmp_rdata_a0[0] <=   n_tmp_a0[127:120];
+        tmp_rdata_a1[1] <=   n_tmp_a1[119:112];      tmp_rdata_a0[1] <=   n_tmp_a0[119:112];
+        tmp_rdata_a1[2] <=   n_tmp_a1[111:104];      tmp_rdata_a0[2] <=   n_tmp_a0[111:104];
+        tmp_rdata_a1[3] <=   n_tmp_a1[103:96];       tmp_rdata_a0[3] <=   n_tmp_a0[103:96];
+        tmp_rdata_a1[4] <=   n_tmp_a1[95:88];        tmp_rdata_a0[4] <=   n_tmp_a0[95:88];
+        tmp_rdata_a1[5] <=   n_tmp_a1[87:80];        tmp_rdata_a0[5] <=   n_tmp_a0[87:80];
+        tmp_rdata_a1[6] <=   n_tmp_a1[79:72];        tmp_rdata_a0[6] <=   n_tmp_a0[79:72];
+        tmp_rdata_a1[7] <=   n_tmp_a1[71:64];        tmp_rdata_a0[7] <=   n_tmp_a0[71:64];
+        tmp_rdata_a1[8] <=   n_tmp_a1[63:56];        tmp_rdata_a0[8] <=   n_tmp_a0[63:56];
+        tmp_rdata_a1[9] <=   n_tmp_a1[55:48];        tmp_rdata_a0[9] <=   n_tmp_a0[55:48];
+        tmp_rdata_a1[10] <=  n_tmp_a1[47:40];        tmp_rdata_a0[10] <=  n_tmp_a0[47:40];
+        tmp_rdata_a1[11] <=  n_tmp_a1[39:32];        tmp_rdata_a0[11] <=  n_tmp_a0[39:32];
+        tmp_rdata_a1[12] <=  n_tmp_a1[31:24];        tmp_rdata_a0[12] <=  n_tmp_a0[31:24];
+        tmp_rdata_a1[13] <=  n_tmp_a1[23:16];        tmp_rdata_a0[13] <=  n_tmp_a0[23:16];
+        tmp_rdata_a1[14] <=  n_tmp_a1[15:8];         tmp_rdata_a0[14] <=  n_tmp_a0[15:8];
+        tmp_rdata_a1[15] <=  n_tmp_a1[7:0];          tmp_rdata_a0[15] <=  n_tmp_a0[7:0];
 
-        tmp_rdata_a1[0] <=   n_tmp_a1[127:120];
-        tmp_rdata_a1[1] <=   n_tmp_a1[119:112];
-        tmp_rdata_a1[2] <=   n_tmp_a1[111:104];
-        tmp_rdata_a1[3] <=   n_tmp_a1[103:96];
-        tmp_rdata_a1[4] <=   n_tmp_a1[95:88];
-        tmp_rdata_a1[5] <=   n_tmp_a1[87:80];
-        tmp_rdata_a1[6] <=   n_tmp_a1[79:72];
-        tmp_rdata_a1[7] <=   n_tmp_a1[71:64];
-        tmp_rdata_a1[8] <=   n_tmp_a1[63:56];
-        tmp_rdata_a1[9] <=   n_tmp_a1[55:48];
-        tmp_rdata_a1[10] <=  n_tmp_a1[47:40];
-        tmp_rdata_a1[11] <=  n_tmp_a1[39:32];
-        tmp_rdata_a1[12] <=  n_tmp_a1[31:24];
-        tmp_rdata_a1[13] <=  n_tmp_a1[23:16];
-        tmp_rdata_a1[14] <=  n_tmp_a1[15:8];
-        tmp_rdata_a1[15] <=  n_tmp_a1[7:0];
-        
-        tmp_rdata_a2[0] <=   n_tmp_a2[127:120];
-        tmp_rdata_a2[1] <=   n_tmp_a2[119:112];
-        tmp_rdata_a2[2] <=   n_tmp_a2[111:104];
-        tmp_rdata_a2[3] <=   n_tmp_a2[103:96];
-        tmp_rdata_a2[4] <=   n_tmp_a2[95:88];
-        tmp_rdata_a2[5] <=   n_tmp_a2[87:80];
-        tmp_rdata_a2[6] <=   n_tmp_a2[79:72];
-        tmp_rdata_a2[7] <=   n_tmp_a2[71:64];
-        tmp_rdata_a2[8] <=   n_tmp_a2[63:56];
-        tmp_rdata_a2[9] <=   n_tmp_a2[55:48];
-        tmp_rdata_a2[10] <=  n_tmp_a2[47:40];
-        tmp_rdata_a2[11] <=  n_tmp_a2[39:32];
-        tmp_rdata_a2[12] <=  n_tmp_a2[31:24];
-        tmp_rdata_a2[13] <=  n_tmp_a2[23:16];
-        tmp_rdata_a2[14] <=  n_tmp_a2[15:8];
-        tmp_rdata_a2[15] <=  n_tmp_a2[7:0];
-
-        tmp_rdata_a3[0] <=   n_tmp_a3[127:120];
-        tmp_rdata_a3[1] <=   n_tmp_a3[119:112];
-        tmp_rdata_a3[2] <=   n_tmp_a3[111:104];
-        tmp_rdata_a3[3] <=   n_tmp_a3[103:96];
-        tmp_rdata_a3[4] <=   n_tmp_a3[95:88];
-        tmp_rdata_a3[5] <=   n_tmp_a3[87:80];
-        tmp_rdata_a3[6] <=   n_tmp_a3[79:72];
-        tmp_rdata_a3[7] <=   n_tmp_a3[71:64];
-        tmp_rdata_a3[8] <=   n_tmp_a3[63:56];
-        tmp_rdata_a3[9] <=   n_tmp_a3[55:48];
-        tmp_rdata_a3[10] <=  n_tmp_a3[47:40];
-        tmp_rdata_a3[11] <=  n_tmp_a3[39:32];
-        tmp_rdata_a3[12] <=  n_tmp_a3[31:24];
-        tmp_rdata_a3[13] <=  n_tmp_a3[23:16];
-        tmp_rdata_a3[14] <=  n_tmp_a3[15:8];
-        tmp_rdata_a3[15] <=  n_tmp_a3[7:0];
+        tmp_rdata_a3[0] <=   n_tmp_a3[127:120];      tmp_rdata_a2[0] <=   n_tmp_a2[127:120];
+        tmp_rdata_a3[1] <=   n_tmp_a3[119:112];      tmp_rdata_a2[1] <=   n_tmp_a2[119:112];
+        tmp_rdata_a3[2] <=   n_tmp_a3[111:104];      tmp_rdata_a2[2] <=   n_tmp_a2[111:104];
+        tmp_rdata_a3[3] <=   n_tmp_a3[103:96];       tmp_rdata_a2[3] <=   n_tmp_a2[103:96];
+        tmp_rdata_a3[4] <=   n_tmp_a3[95:88];        tmp_rdata_a2[4] <=   n_tmp_a2[95:88];
+        tmp_rdata_a3[5] <=   n_tmp_a3[87:80];        tmp_rdata_a2[5] <=   n_tmp_a2[87:80];
+        tmp_rdata_a3[6] <=   n_tmp_a3[79:72];        tmp_rdata_a2[6] <=   n_tmp_a2[79:72];
+        tmp_rdata_a3[7] <=   n_tmp_a3[71:64];        tmp_rdata_a2[7] <=   n_tmp_a2[71:64];
+        tmp_rdata_a3[8] <=   n_tmp_a3[63:56];        tmp_rdata_a2[8] <=   n_tmp_a2[63:56];
+        tmp_rdata_a3[9] <=   n_tmp_a3[55:48];        tmp_rdata_a2[9] <=   n_tmp_a2[55:48];
+        tmp_rdata_a3[10] <=  n_tmp_a3[47:40];        tmp_rdata_a2[10] <=  n_tmp_a2[47:40];
+        tmp_rdata_a3[11] <=  n_tmp_a3[39:32];        tmp_rdata_a2[11] <=  n_tmp_a2[39:32];
+        tmp_rdata_a3[12] <=  n_tmp_a3[31:24];        tmp_rdata_a2[12] <=  n_tmp_a2[31:24];
+        tmp_rdata_a3[13] <=  n_tmp_a3[23:16];        tmp_rdata_a2[13] <=  n_tmp_a2[23:16];
+        tmp_rdata_a3[14] <=  n_tmp_a3[15:8];         tmp_rdata_a2[14] <=  n_tmp_a2[15:8];
+        tmp_rdata_a3[15] <=  n_tmp_a3[7:0];          tmp_rdata_a2[15] <=  n_tmp_a2[7:0];
 
         for(maci = 0; maci < 12; maci = maci + 1) begin
             pipe1_c0[maci] <= nmul_c0[maci];
@@ -569,9 +535,13 @@ always @(posedge clk) begin
 
         if(state == CONV2) begin 
             // $display("%d", sram_raddr_weight);
-            if(myconv2.tmpcnt == 4) $display("=====================");
-            if(myconv2.state == 1) begin 
-                $display("bias: %d", local_bias);
+            // if(myconv2.tmpcnt == 4) $display("=====================");
+            // if(myconv2.state == 1) begin 
+            // if(myconv2.row == 4 && myconv2.col >= 3)  begin
+            //     $display("tmpcnt %d %d %d", myconv2.tmpcnt, myconv2.wr_w, sram_raddr_weight);
+            // end 
+            // if(myconv2.row == 0 && myconv2.col < 1)  begin
+            //     $display("bias: %d", local_bias);
             //     $display("sweight:::");
             //     for(chi = 0; chi < 4; chi = chi + 1) begin 
             //         for(chj = 0; chj < 9; chj = chj + 1) begin 
@@ -579,16 +549,19 @@ always @(posedge clk) begin
             //         end 
             //         $write("\n");
             //     end
-            end
-            if(myconv2.state == 2) begin 
-            // $display("row col: %d %d; %d %d %d %d", myconv2.row, myconv2.col, 
-            // sram_raddr_b0, sram_raddr_b1, sram_raddr_b2, sram_raddr_b3);
-            // $display(": %h %h",n_tmp_a0, sram_rdata_b0);
-            // $display(": %h %h",n_tmp_a1, sram_rdata_b1);
-            // $display(": %h %h",n_tmp_a2, sram_rdata_b2);
-            // $display(": %h %h",n_tmp_a3, sram_rdata_b3);
-            $display("%d %d %d %d", pipe3_c0,pipe3_c1,pipe3_c2,pipe3_c3);
-            end
+            //     $display("");
+            // end
+            // if(myconv2.state == 2) begin 
+            //     $display("row col: %d %d; %d %d %d %d", myconv2.row, myconv2.col, 
+            //     sram_raddr_b0, sram_raddr_b1, sram_raddr_b2, sram_raddr_b3);
+            //     // $display(": %h %h",n_tmp_a0, sram_rdata_b0);
+            //     // $display(": %h %h",n_tmp_a1, sram_rdata_b1);
+            //     // $display(": %h %h",n_tmp_a2, sram_rdata_b2);
+            //     // $display(": %h %h",n_tmp_a3, sram_rdata_b3);
+            //     $display("%d %d %d %d", pipe3_c0,pipe3_c1,pipe3_c2,pipe3_c3);
+            //     $display(";%b, %d, (%d %d)", l_sram_a_wen, myconv2.ch, myconv2.wbrow, myconv2.wbcnt);
+            //     $display("addrb: %d mask: %b\ndata: %h",l_sram_waddr_a, l_sram_bytemask_a, l_sram_wdata_a);
+            // end
         end 
         // if(state == CONV1) begin 
         //     // DUMPP
