@@ -69,7 +69,7 @@ output [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] sram_wdata_b
 );
 
 wire unshuffle_valid;
-wire conv1_valid, conv2_valid;
+wire conv1_valid, conv2_valid, conv3_valid;
 reg lvalid;
 assign valid = lvalid;
 reg unsh_n_sram_wen_a0;
@@ -85,13 +85,14 @@ wire [5:0] unsh_n_sram_waddr_a, conv2_n_sram_waddr_a;
 reg [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] l_sram_wdata_a, nl_sram_wdata_a;
 reg [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] l_sram_wdata_b, nl_sram_wdata_b;
 wire [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] unsh_n_sram_wdata_a;
-localparam IDLE=3'd0, UNSHUFFLE=3'd1, CONV1=3'd2, CONV2=3'd3, END=3'd7;
+localparam IDLE=3'd0, UNSHUFFLE=3'd1, CONV1=3'd2, CONV2=3'd3, CONV3=3'd4, END=3'd7;
 reg [2:0] state, nstate;
 reg [3:0] l_sram_a_wen, nl_sram_a_wen;
 reg [3:0] l_sram_b_wen, nl_sram_b_wen;
 wire [3:0] unshuffle_nl_sram_wen;
-wire [3:0] conv1_nl_sram_wen, conv2_nl_sram_wen;
+wire [3:0] conv1_nl_sram_wen, conv2_nl_sram_wen, conv3_nl_sram_wen;
 wire [5:0] conv1_n_sram_raddr_a0, conv1_n_sram_raddr_a1, conv1_n_sram_raddr_a2, conv1_n_sram_raddr_a3;
+wire [5:0] conv3_n_sram_raddr_a0, conv3_n_sram_raddr_a1, conv3_n_sram_raddr_a2, conv3_n_sram_raddr_a3;
 wire [5:0] conv2_n_sram_raddr_b0, conv2_n_sram_raddr_b1, conv2_n_sram_raddr_b2, conv2_n_sram_raddr_b3;
 reg [5:0] n_sram_raddr_a0, n_sram_raddr_a1, n_sram_raddr_a2, n_sram_raddr_a3;
 reg [5:0] n_sram_raddr_b0, n_sram_raddr_b1, n_sram_raddr_b2, n_sram_raddr_b3;
@@ -99,23 +100,27 @@ reg [5:0] lsram_raddr_a0, lsram_raddr_a1, lsram_raddr_a2, lsram_raddr_a3;
 reg [5:0] lsram_raddr_b0, lsram_raddr_b1, lsram_raddr_b2, lsram_raddr_b3;
 reg [10:0] lsram_raddr_weight, nsram_raddr_weight;
 reg [6:0] lraddr_bias, nraddr_bias;
-wire [10:0] shuffle_n_raddr_weight, conv1_n_raddr_weight, conv2_n_raddr_weight;
-wire [6:0] shuffle_n_raddr_bias, conv1_n_raddr_bias, conv2_n_raddr_bias;
-wire shuffle_wr_b, shuffle_wr_w, conv1_wr_w, conv1_wr_b, conv2_wr_w, conv2_wr_b;
+wire [10:0] shuffle_n_raddr_weight, conv1_n_raddr_weight, conv2_n_raddr_weight, conv3_n_raddr_weight;
+wire [6:0] shuffle_n_raddr_bias, conv1_n_raddr_bias, conv2_n_raddr_bias, conv3_n_raddr_bias;
+wire shuffle_wr_b, shuffle_wr_w, conv1_wr_w, conv1_wr_b, conv2_wr_w, conv2_wr_b, conv3_wr_w, conv3_wr_b;
 assign sram_raddr_weight = lsram_raddr_weight;
 assign sram_raddr_bias = lraddr_bias;
 
 reg wr_w, wr_b;
 
-wire [CH_NUM*ACT_PER_ADDR-1:0] conv1_n_sram_bytemask_b, conv2_n_sram_bytemask_a;
-wire [5:0] conv1_n_sram_waddr_b;
-wire [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] conv1_n_sram_wdata_b, conv2_n_sram_wdata_a;
+wire [CH_NUM*ACT_PER_ADDR-1:0] conv1_n_sram_bytemask_b, conv2_n_sram_bytemask_a, conv3_n_sram_bytemask_b;
+wire [5:0] conv1_n_sram_waddr_b, conv3_n_sram_waddr_b;
+wire [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] conv1_n_sram_wdata_b, conv2_n_sram_wdata_a, conv3_n_sram_wdata_b;
 
-wire [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] conv1_n_tmp_a0, conv2_n_tmp_b0;
-wire [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] conv1_n_tmp_a1, conv2_n_tmp_b1;
-wire [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] conv1_n_tmp_a2, conv2_n_tmp_b2;
-wire [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] conv1_n_tmp_a3, conv2_n_tmp_b3;
+wire [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] conv1_n_tmp_a0, conv2_n_tmp_b0, conv3_n_tmp_a0;
+wire [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] conv1_n_tmp_a1, conv2_n_tmp_b1, conv3_n_tmp_a1;
+wire [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] conv1_n_tmp_a2, conv2_n_tmp_b2, conv3_n_tmp_a2;
+wire [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] conv1_n_tmp_a3, conv2_n_tmp_b3, conv3_n_tmp_a3;
 
+wire pong, wr_pong_w;
+wire [1:0] conv3_ctl;
+wire conv3_reset;
+wire cache_valid;
 assign sram_raddr_a0 = lsram_raddr_a0;  assign sram_wen_a0 = l_sram_a_wen[0];
 assign sram_raddr_a1 = lsram_raddr_a1;  assign sram_wen_a1 = l_sram_a_wen[1];
 assign sram_raddr_a2 = lsram_raddr_a2;  assign sram_wen_a2 = l_sram_a_wen[2];
@@ -144,7 +149,12 @@ always @* begin
         n_sram_raddr_a1 = conv1_n_sram_raddr_a1;
         n_sram_raddr_a2 = conv1_n_sram_raddr_a2;
         n_sram_raddr_a3 = conv1_n_sram_raddr_a3;
-    end 
+    end else if(state == CONV3) begin 
+        n_sram_raddr_a0 = conv3_n_sram_raddr_a0;
+        n_sram_raddr_a1 = conv3_n_sram_raddr_a1;
+        n_sram_raddr_a2 = conv3_n_sram_raddr_a2;
+        n_sram_raddr_a3 = conv3_n_sram_raddr_a3;
+    end
 
     n_sram_raddr_b0 = lsram_raddr_b0;
     n_sram_raddr_b1 = lsram_raddr_b1;
@@ -166,7 +176,8 @@ always @* begin
     nl_sram_b_wen = l_sram_b_wen;
     if(state == CONV1)  
         nl_sram_b_wen = conv1_nl_sram_wen;
- 
+    else if(state == CONV3)
+        nl_sram_b_wen = conv3_nl_sram_wen;
 
     nl_sram_bytemask_a = l_sram_bytemask_a;
     if(state <= UNSHUFFLE) 
@@ -175,9 +186,10 @@ always @* begin
         nl_sram_bytemask_a = conv2_n_sram_bytemask_a;
     
     nl_sram_bytemask_b = l_sram_bytemask_b;
-    if(state >= CONV1) begin 
+    if(state == CONV1)  
         nl_sram_bytemask_b = conv1_n_sram_bytemask_b;
-    end 
+    else 
+        nl_sram_bytemask_b = conv3_n_sram_bytemask_b;
     
     nl_sram_waddr_a = l_sram_waddr_a;
     if(state <= UNSHUFFLE)  
@@ -188,7 +200,8 @@ always @* begin
     nl_sram_waddr_b = l_sram_waddr_b;
     if(state == CONV1) begin 
         nl_sram_waddr_b = conv1_n_sram_waddr_b;
-    end 
+    end else if(state == CONV3)
+        nl_sram_waddr_b = conv3_n_sram_waddr_b;
 
     nl_sram_wdata_a = l_sram_wdata_a;
     if(state <= UNSHUFFLE) 
@@ -199,6 +212,8 @@ always @* begin
     nl_sram_wdata_b = l_sram_wdata_b;
     if(state == CONV1) begin 
         nl_sram_wdata_b = conv1_n_sram_wdata_b;
+    end else if(state == CONV3) begin 
+        nl_sram_wdata_b = conv3_n_sram_wdata_b;
     end 
         
     nsram_raddr_weight = lsram_raddr_weight;
@@ -220,6 +235,11 @@ always @* begin
         nraddr_bias = conv2_n_raddr_bias;
         wr_b = conv2_wr_b;
         wr_w = conv2_wr_w;
+    end else if(state == CONV3) begin 
+        nsram_raddr_weight = conv3_n_raddr_weight;
+        nraddr_bias = conv3_n_raddr_bias;
+        wr_b = conv3_wr_b;
+        wr_w = conv3_wr_w;
     end 
 end 
 
@@ -296,7 +316,8 @@ always @* begin
             IDLE: nstate = UNSHUFFLE;
             UNSHUFFLE: nstate = (unshuffle_valid == 1) ? CONV1 : UNSHUFFLE;
             CONV1: nstate = (conv1_valid == 1) ? CONV2 : CONV1;
-            CONV2: nstate = (conv2_valid == 1) ? END : CONV2;
+            CONV2: nstate = (conv2_valid == 1) ? CONV3 : CONV2;
+            CONV3: nstate = (conv3_valid == 1) ? END : CONV3;
             END: nstate = END;
             default: nstate = IDLE;
         endcase
@@ -307,7 +328,7 @@ reg [BW_PER_ACT-1:0] pipe3_c0;
 reg [BW_PER_ACT-1:0] pipe3_c1;
 reg [BW_PER_ACT-1:0] pipe3_c2;
 reg [BW_PER_ACT-1:0] pipe3_c3;
-
+reg [BW_PER_ACT-1:0] max_pool, n_maxpool;
 Conv1 #(
 .CH_NUM(CH_NUM),
 .ACT_PER_ADDR(ACT_PER_ADDR),
@@ -390,6 +411,54 @@ myconv2(
 .wr_b(conv2_wr_w)
 );
 
+Conv3 #(
+.CH_NUM(CH_NUM),
+.ACT_PER_ADDR(ACT_PER_ADDR),
+.BW_PER_ACT(BW_PER_ACT),
+.BW_PER_PARAM(BW_PER_PARAM)
+)
+myconv3(
+.clk(clk),                       
+.rst_n(rst_n),                     
+.enable(state == CONV3),
+.sram_rdata_a0(sram_rdata_a0),
+.sram_rdata_a1(sram_rdata_a1),
+.sram_rdata_a2(sram_rdata_a2),
+.sram_rdata_a3(sram_rdata_a3),
+.pipe3_c0(pipe3_c0),
+.pipe3_c1(pipe3_c1),
+.pipe3_c2(pipe3_c2),
+.pipe3_c3(pipe3_c3),
+// output 
+.valid(conv3_valid),             
+.n_sram_raddr_a0(conv3_n_sram_raddr_a0),
+.n_sram_raddr_a1(conv3_n_sram_raddr_a1),
+.n_sram_raddr_a2(conv3_n_sram_raddr_a2),
+.n_sram_raddr_a3(conv3_n_sram_raddr_a3),
+//bytemask for SRAM group B
+.n_sram_bytemask_b(conv3_n_sram_bytemask_b),
+// write addrress to SRAM group B
+.n_sram_waddr_b(conv3_n_sram_waddr_b),
+// write data to SRAM group B
+.n_sram_wdata_b(conv3_n_sram_wdata_b),
+.n_sram_wen(conv3_nl_sram_wen),
+.n_tmp_a0(conv3_n_tmp_a0),
+.n_tmp_a1(conv3_n_tmp_a1),
+.n_tmp_a2(conv3_n_tmp_a2),
+.n_tmp_a3(conv3_n_tmp_a3),
+.n_raddr_weight(conv3_n_raddr_weight),
+.n_raddr_bias(conv3_n_raddr_bias),
+.wr_w(conv3_wr_w),
+.wr_b(conv3_wr_b),
+.wr_pong_w(wr_pong_w),
+.pong(pong),
+.conv3_ctl(conv3_ctl),
+.reset(conv3_reset),
+.cache_valid(cache_valid)
+);
+
+
+
 // PEs 
 // conv1: 
 // ch0 at CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1: 3*ACT_PER_ADDR*BW_PER_ACT
@@ -397,8 +466,9 @@ myconv2(
 // ch2 at 2*ACT_PER_ADDR*BW_PER_ACT-1: ACT_PER_ADDR*BW_PER_ACT
 // ch3 at ACT_PER_ADDR*BW_PER_ACT-1: 0
 reg signed [BW_PER_PARAM-1:0] local_weight[0:WEIGHT_PER_ADDR*CH_NUM-1];
+reg signed [BW_PER_PARAM-1:0] pong_weight[0:WEIGHT_PER_ADDR*CH_NUM-1];
+reg signed [BW_PER_PARAM-1:0] choose_weight[0:WEIGHT_PER_ADDR*CH_NUM-1];
 reg signed [BW_PER_PARAM-1:0] local_bias;//[0:BIAS_PER_ADDR*CH_NUM-1];
-
 reg [CH_NUM*ACT_PER_ADDR*BW_PER_ACT-1:0] n_tmp_a0,n_tmp_a1,n_tmp_a2,n_tmp_a3;
 reg signed [BW_PER_ACT-1:0] tmp_rdata_a0[0:CH_NUM*ACT_PER_ADDR-1];
 reg signed [BW_PER_ACT-1:0] tmp_rdata_a1[0:CH_NUM*ACT_PER_ADDR-1];
@@ -414,16 +484,15 @@ reg signed [BW_PER_ACT+BW_PER_PARAM+3:0] pipe2_c0, nmul2_c0; //3 * 4 - 1
 reg signed [BW_PER_ACT+BW_PER_PARAM+3:0] pipe2_c1, nmul2_c1; //3 * 4 - 1
 reg signed [BW_PER_ACT+BW_PER_PARAM+3:0] pipe2_c2, nmul2_c2; //3 * 4 - 1
 reg signed [BW_PER_ACT+BW_PER_PARAM+3:0] pipe2_c3, nmul2_c3; //3 * 4 - 1
-
+reg signed [BW_PER_ACT+BW_PER_PARAM+3:0] act0, act1, act2, act3;
 reg signed [BW_PER_ACT+BW_PER_PARAM+3:0]  nmul3_c0, nmul3_1_c0, nmul3_2_c0;
 reg signed [BW_PER_ACT+BW_PER_PARAM+3:0]  nmul3_c1, nmul3_1_c1, nmul3_2_c1;
 reg signed [BW_PER_ACT+BW_PER_PARAM+3:0]  nmul3_c2, nmul3_1_c2, nmul3_2_c2;
 reg signed [BW_PER_ACT+BW_PER_PARAM+3:0]  nmul3_c3, nmul3_1_c3, nmul3_2_c3;
 
-
-
-reg val_p1, val_p2, val_p3;
-
+reg signed [BW_PER_ACT+BW_PER_PARAM+3:0] cache0[0:3], cache1[0:3], cache2[0:3], cache3[0:3];
+reg signed [BW_PER_ACT+BW_PER_PARAM+3:0] ncache[0:3];
+integer cache_i;
 always @* begin 
     n_tmp_a0 = 0;
     n_tmp_a1 = 0;
@@ -439,9 +508,14 @@ always @* begin
         n_tmp_a1 = conv2_n_tmp_b1;
         n_tmp_a2 = conv2_n_tmp_b2;
         n_tmp_a3 = conv2_n_tmp_b3;  
+    end else if(state == CONV3) begin 
+        n_tmp_a0 = conv3_n_tmp_a0;
+        n_tmp_a1 = conv3_n_tmp_a1;
+        n_tmp_a2 = conv3_n_tmp_a2;
+        n_tmp_a3 = conv3_n_tmp_a3;
     end 
 end 
-integer wi, i, j, maci;
+integer wi, i, j, maci, cci;
 always @(posedge clk) begin 
     if(!rst_n) begin 
         for(i = 0; i < 16; i = i + 1) begin 
@@ -452,7 +526,10 @@ always @(posedge clk) begin
         end 
         pipe2_c0 <= 0;  pipe2_c1 <= 0;   pipe2_c2 <= 0;    pipe2_c3 <= 0;
         pipe3_c0 <= 0;   pipe3_c1 <= 0;   pipe3_c2 <= 0;   pipe3_c3 <= 0;
-        val_p1 <= 0; val_p2 <= 0; val_p3 <= 0;
+        max_pool <= 0;
+        for(cci = 0; cci < 4; cci = cci + 1) begin 
+        cache0[cci] <= 0; cache1[cci] <= 0; cache2[cci] <= 0; cache3[cci] <= 0;
+        end 
     end else begin 
         if(wr_w == 1) begin 
             // $display("wr: %d", sram_raddr_weight);
@@ -478,7 +555,26 @@ always @(posedge clk) begin
         if(wr_b == 1) begin 
             local_bias <= sram_rdata_bias;
         end 
-        
+        if(wr_pong_w == 1) begin 
+            pong_weight[0] <= pong_weight[9] ;  pong_weight[9] <=  pong_weight[18]; pong_weight[18] <= pong_weight[27]; 
+            pong_weight[1] <= pong_weight[10];  pong_weight[10] <= pong_weight[19]; pong_weight[19] <= pong_weight[28]; 
+            pong_weight[2] <= pong_weight[11];  pong_weight[11] <= pong_weight[20]; pong_weight[20] <= pong_weight[29]; 
+            pong_weight[3] <= pong_weight[12];  pong_weight[12] <= pong_weight[21]; pong_weight[21] <= pong_weight[30]; 
+            pong_weight[4] <= pong_weight[13];  pong_weight[13] <= pong_weight[22]; pong_weight[22] <= pong_weight[31]; 
+            pong_weight[5] <= pong_weight[14];  pong_weight[14] <= pong_weight[23]; pong_weight[23] <= pong_weight[32]; 
+            pong_weight[6] <= pong_weight[15];  pong_weight[15] <= pong_weight[24]; pong_weight[24] <= pong_weight[33]; 
+            pong_weight[7] <= pong_weight[16];  pong_weight[16] <= pong_weight[25]; pong_weight[25] <= pong_weight[34]; 
+            pong_weight[8] <= pong_weight[17];  pong_weight[17] <= pong_weight[26]; pong_weight[26] <= pong_weight[35]; 
+            pong_weight[27] <= sram_rdata_weight[BW_PER_PARAM*9-1:BW_PER_PARAM*8];
+            pong_weight[28] <= sram_rdata_weight[BW_PER_PARAM*8-1:BW_PER_PARAM*7];
+            pong_weight[29] <= sram_rdata_weight[BW_PER_PARAM*7-1:BW_PER_PARAM*6];
+            pong_weight[30] <= sram_rdata_weight[BW_PER_PARAM*6-1:BW_PER_PARAM*5];
+            pong_weight[31] <= sram_rdata_weight[BW_PER_PARAM*5-1:BW_PER_PARAM*4];
+            pong_weight[32] <= sram_rdata_weight[BW_PER_PARAM*4-1:BW_PER_PARAM*3];
+            pong_weight[33] <= sram_rdata_weight[BW_PER_PARAM*3-1:BW_PER_PARAM*2];
+            pong_weight[34] <= sram_rdata_weight[BW_PER_PARAM*2-1:BW_PER_PARAM*1];
+            pong_weight[35] <= sram_rdata_weight[BW_PER_PARAM*1-1:BW_PER_PARAM*0];
+        end 
         // for(j = 0; j < CH_NUM; j = j + 1) begin 
         //     for(i = 0; i < ACT_PER_ADDR; i = i + 1) begin 
         //         tmp_rdata_a0[4*j+i] <= n_tmp_a0[(CH_NUM-j)*ACT_PER_ADDR*BW_PER_ACT-1-i*BW_PER_ACT:(CH_NUM-j)*ACT_PER_ADDR*BW_PER_ACT-(i+1)*BW_PER_ACT]; 
@@ -527,12 +623,86 @@ always @(posedge clk) begin
             pipe1_c2[maci] <= nmul_c2[maci];
             pipe1_c3[maci] <= nmul_c3[maci];
         end 
-
+        
+        if(cache_valid) begin 
+        (* synthesis, parallel_case *)
+        case(conv3_ctl) 
+            2'b01: begin 
+            cache0[0] <= cache0[0] + nmul2_c0;
+            cache0[1] <= cache0[1] + nmul2_c1;
+            cache0[2] <= cache0[2] + nmul2_c2;
+            cache0[3] <= cache0[3] + nmul2_c3;
+            if(conv3_reset == 1) begin 
+                cache3[0] <= 0; cache3[1] <= 0;  cache3[2] <= 0;   cache3[3] <= 0;
+            end 
+            end 
+            2'b10: begin 
+            cache1[0] <= cache1[0] + nmul2_c0;
+            cache1[1] <= cache1[1] + nmul2_c1;
+            cache1[2] <= cache1[2] + nmul2_c2;
+            cache1[3] <= cache1[3] + nmul2_c3;
+            if(conv3_reset == 1) begin 
+                cache0[0] <= 0; cache0[1] <= 0;  cache0[2] <= 0;   cache0[3] <= 0;
+            end 
+             end 
+            2'b11: begin 
+            cache2[0] <= cache2[0] + nmul2_c0;
+            cache2[1] <= cache2[1] + nmul2_c1;
+            cache2[2] <= cache2[2] + nmul2_c2;
+            cache2[3] <= cache2[3] + nmul2_c3;
+            if(conv3_reset == 1) begin 
+                cache1[0] <= 0; cache1[1] <= 0;  cache1[2] <= 0;   cache1[3] <= 0;
+            end 
+             end 
+            2'b00: begin 
+            cache3[0] <= cache3[0] + nmul2_c0;
+            cache3[1] <= cache3[1] + nmul2_c1;
+            cache3[2] <= cache3[2] + nmul2_c2;
+            cache3[3] <= cache3[3] + nmul2_c3;
+            if(conv3_reset == 1) begin 
+                cache2[0] <= 0; cache2[1] <= 0;  cache2[2] <= 0;   cache2[3] <= 0;
+            end 
+            end 
+        endcase 
+        end
         pipe2_c0 <= nmul2_c0; pipe3_c0 <= nmul3_2_c0[7:0];   
         pipe2_c1 <= nmul2_c1; pipe3_c1 <= nmul3_2_c1[7:0];  
         pipe2_c2 <= nmul2_c2; pipe3_c2 <= nmul3_2_c2[7:0]; 
         pipe2_c3 <= nmul2_c3; pipe3_c3 <= nmul3_2_c3[7:0];
 
+        max_pool <= n_maxpool;
+        if(state == CONV3) begin 
+            if(myconv3.state == 2) begin  //ACT
+                // $display("%h", sram_rdata_weight);
+                // $display("%b bias %d; %b %b %b rch: %d row: %d col: %d w_stat: %d caddr: %d waddr: %d ",
+                // wr_b, sram_raddr_bias, pong,wr_w, wr_pong_w, myconv3.r_ch, myconv3.row, myconv3.col, myconv3.w_stat, sram_raddr_weight, myconv3.l_raddr_weight);
+                $display("----\n%d rch: %d row: %d col: %d w_stat: %d caddr: %d waddr: %d raddr: %d %d %d %d ",
+                 conv3_ctl, myconv3.r_ch, myconv3.row, myconv3.col, myconv3.w_stat, sram_raddr_weight, myconv3.l_raddr_weight, 
+                myconv3.l_sram_raddr_a0, myconv3.l_sram_raddr_a1, myconv3.l_sram_raddr_a2, myconv3.l_sram_raddr_a3);
+                
+                $display("%h",n_tmp_a0);
+                $display("weight");
+                for(chi = 0; chi < 4; chi = chi + 1) begin 
+                    for(chj = 0; chj < 9; chj = chj + 1) begin 
+                        $write("(%d, %d),", choose_weight[chi*9+chj], tmp_c0[chi*9+chj]);
+                    end 
+                    $write("\n");
+                end
+                $display("\n%d", local_bias);
+                
+                for(chi = 0; chi < 4; chi = chi + 1) begin 
+                    $display("%d %d %d %d", cache0[chi], cache1[chi], cache2[chi], cache3[chi]);
+                end 
+                $display("nmul2_c: %d %d %d %d",nmul2_c0, nmul2_c1, nmul2_c2, nmul2_c3);
+                $display("act0: %d %d %d %d",act0, act1, act2, act3);
+                
+                if(myconv3.prev_stat == 3)
+                    $write("::");
+                    // four result from last ::  to next three !! 
+                $display("%d %d %d %d", pipe3_c0,pipe3_c1,pipe3_c2,pipe3_c3);
+                
+            end 
+        end 
         if(state == CONV2) begin 
             // $display("%d", sram_raddr_weight);
             // if(myconv2.tmpcnt == 4) $display("=====================");
@@ -713,14 +883,37 @@ always @* begin
     tmp_c3[24]  = tmp_rdata_a2[11];     tmp_c3[33]  = tmp_rdata_a2[15];
     tmp_c3[25]  = tmp_rdata_a3[10];     tmp_c3[34]  = tmp_rdata_a3[14];
     tmp_c3[26]  = tmp_rdata_a3[11];     tmp_c3[35]  = tmp_rdata_a3[15];
+    
+    if(state == CONV3) begin
+       case(conv3_ctl)
+        2'b01:begin 
+        act0 = cache3[0]; act1 = cache3[1]; act2 = cache3[2]; act3 = cache3[3];
+        end
+        2'b10:begin 
+        act0 = cache0[0]; act1 = cache0[1]; act2 = cache0[2]; act3 = cache0[3];
+        end
+        2'b11:begin 
+        act0 = cache1[0]; act1 = cache1[1]; act2 = cache1[2]; act3 = cache1[3];
+        end
+        2'b00:begin 
+        act0 = cache2[0]; act1 = cache2[1]; act2 = cache2[2]; act3 = cache2[3];
+        end
+       endcase
+    end else begin 
+        act0 = pipe2_c0;
+        act1 = pipe2_c1;
+        act2 = pipe2_c2;
+        act3 = pipe2_c3;
+    end 
 end 
 
 integer ci, cj;
 reg signed [BW_PER_ACT+BW_PER_PARAM+3:0] bias_shift;// = {{5{local_bias[BW_PER_PARAM-1]}},local_bias,7'd0};
 reg [7:0] round; 
+integer wi_cho;
 always @* begin 
     round = (state <= CONV1) ? 8'b01000000 : ((state == CONV2) ? 8'b00010000 : 8'b00100000);
-    bias_shift = (state <= CONV1) ? {{5{local_bias[BW_PER_PARAM-1]}},local_bias,7'd0} : ((state == CONV2) ? {{9{local_bias[BW_PER_PARAM-1]}},local_bias,3'd0} : 16'd0); 
+    bias_shift = (state <= CONV1) ? {{5{local_bias[BW_PER_PARAM-1]}},local_bias,7'd0} : {{9{local_bias[BW_PER_PARAM-1]}},local_bias,3'd0};  // conv3 & conv2 use both bias >> 3
     
     if(state <= CONV1) begin 
     nmul3_1_c0 = {{7{nmul3_c0[15]}}, nmul3_c0[15:7]};
@@ -738,13 +931,22 @@ always @* begin
     nmul3_1_c2 = {{8{nmul3_c2[15]}}, nmul3_c2[15:6]};
     nmul3_1_c3 = {{8{nmul3_c3[15]}}, nmul3_c3[15:6]};
     end 
+    
+    if(pong == 1) begin 
+        for(wi_cho = 0; wi_cho < 36; wi_cho = wi_cho + 1)
+            choose_weight[wi_cho] = pong_weight[wi_cho];
+    end else begin 
+        for(wi_cho = 0; wi_cho < 36; wi_cho = wi_cho + 1)
+            choose_weight[wi_cho] = local_weight[wi_cho];
+    end 
 end 
+
 always @* begin 
     for(ci = 0; ci < 12; ci = ci + 1) begin 
-        nmul_c0[ci] = tmp_c0[3*ci] * local_weight[3*ci] + tmp_c0[3*ci+1] * local_weight[3*ci+1] + tmp_c0[3*ci+2] * local_weight[3*ci+2];
-        nmul_c1[ci] = tmp_c1[3*ci] * local_weight[3*ci] + tmp_c1[3*ci+1] * local_weight[3*ci+1] + tmp_c1[3*ci+2] * local_weight[3*ci+2];
-        nmul_c2[ci] = tmp_c2[3*ci] * local_weight[3*ci] + tmp_c2[3*ci+1] * local_weight[3*ci+1] + tmp_c2[3*ci+2] * local_weight[3*ci+2];
-        nmul_c3[ci] = tmp_c3[3*ci] * local_weight[3*ci] + tmp_c3[3*ci+1] * local_weight[3*ci+1] + tmp_c3[3*ci+2] * local_weight[3*ci+2];
+        nmul_c0[ci] = tmp_c0[3*ci] * choose_weight[3*ci] + tmp_c0[3*ci+1] * choose_weight[3*ci+1] + tmp_c0[3*ci+2] * choose_weight[3*ci+2];
+        nmul_c1[ci] = tmp_c1[3*ci] * choose_weight[3*ci] + tmp_c1[3*ci+1] * choose_weight[3*ci+1] + tmp_c1[3*ci+2] * choose_weight[3*ci+2];
+        nmul_c2[ci] = tmp_c2[3*ci] * choose_weight[3*ci] + tmp_c2[3*ci+1] * choose_weight[3*ci+1] + tmp_c2[3*ci+2] * choose_weight[3*ci+2];
+        nmul_c3[ci] = tmp_c3[3*ci] * choose_weight[3*ci] + tmp_c3[3*ci+1] * choose_weight[3*ci+1] + tmp_c3[3*ci+2] * choose_weight[3*ci+2];
     end 
     
     nmul2_c0 = pipe1_c0[0] + pipe1_c0[1] + pipe1_c0[2] + pipe1_c0[3] + pipe1_c0[4] + pipe1_c0[5] + pipe1_c0[6] + pipe1_c0[7] + pipe1_c0[8] + pipe1_c0[9] + pipe1_c0[10] + pipe1_c0[11];  
@@ -752,10 +954,10 @@ always @* begin
     nmul2_c2 = pipe1_c2[0] + pipe1_c2[1] + pipe1_c2[2] + pipe1_c2[3] + pipe1_c2[4] + pipe1_c2[5] + pipe1_c2[6] + pipe1_c2[7] + pipe1_c2[8] + pipe1_c2[9] + pipe1_c2[10] + pipe1_c2[11]; 
     nmul2_c3 = pipe1_c3[0] + pipe1_c3[1] + pipe1_c3[2] + pipe1_c3[3] + pipe1_c3[4] + pipe1_c3[5] + pipe1_c3[6] + pipe1_c3[7] + pipe1_c3[8] + pipe1_c3[9] + pipe1_c3[10] + pipe1_c3[11]; 
     
-    nmul3_c0 = bias_shift + pipe2_c0 + round;//{7'b1000000};
-    nmul3_c1 = bias_shift + pipe2_c1 + round;//{7'b1000000};
-    nmul3_c2 = bias_shift + pipe2_c2 + round;//{7'b1000000};
-    nmul3_c3 = bias_shift + pipe2_c3 + round;//{7'b1000000};
+    nmul3_c0 = bias_shift + act0 + round;//{7'b1000000};
+    nmul3_c1 = bias_shift + act1 + round;//{7'b1000000};
+    nmul3_c2 = bias_shift + act2 + round;//{7'b1000000};
+    nmul3_c3 = bias_shift + act3 + round;//{7'b1000000};
 
 end 
 
@@ -766,6 +968,10 @@ always @* begin
     nmul3_2_c2 = (nmul3_1_c2[15] == 1) ? 0 : ((nmul3_1_c2 >= 13'd127) ? 12'd127 : nmul3_1_c2);//(nmul3_1_c2 >= 12'd127) ? 12'd127 : ((nmul3_1_c2 < 0) ? 0 : nmul3_1_c2);
     nmul3_2_c3 = (nmul3_1_c3[15] == 1) ? 0 : ((nmul3_1_c3 >= 13'd127) ? 12'd127 : nmul3_1_c3);//(nmul3_1_c3 >= 12'd127) ? 12'd127 : ((nmul3_1_c3 < 0) ? 0 : nmul3_1_c3);
 end 
-
+wire [BW_PER_ACT-1:0] comp0 = pipe3_c0 > pipe3_c1 ? pipe3_c0 : pipe3_c1;
+wire [BW_PER_ACT-1:0] comp1 = pipe3_c2 > pipe3_c3 ? pipe3_c2 : pipe3_c3;
+always @* begin 
+    n_maxpool = (comp0 > comp1) ? comp0 : comp1;
+end 
 
 endmodule

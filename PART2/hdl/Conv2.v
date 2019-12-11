@@ -57,7 +57,7 @@ assign n_sram_bytemask_a = nl_sram_bytemask_a;
 assign n_sram_wdata_a = nl_sram_wdata_a;
 assign n_sram_waddr_a = nl_sram_waddr_a;
 localparam IDLE=2'd0, PREP=2'd1, ACT=2'd2, END=2'd3;
-reg [3:0] ch, nch;
+reg [3:0] ch;
 reg [2:0] row, nrow, col, ncol;
 reg [1:0] state, nstate;
 reg mode;
@@ -146,7 +146,7 @@ always @* begin
             ntmpcnt = tmpcnt + 1;
     end 
     
-    nrow = row; ncol = col; nch = ch; 
+    nrow = row; ncol = col; 
     if(state == ACT) begin 
         if(col == 4) begin 
             if(row == 4) begin 
@@ -218,7 +218,7 @@ always @(posedge clk) begin
         delay <= 0;
     end else begin 
         state <= nstate;
-        row <= nrow; col <= ncol; //ch <= nch;
+        row <= nrow; col <= ncol; 
         tmpcnt <= ntmpcnt;
         l_sram_raddr_b0 <= nl_sram_raddr_b0; l_sram_raddr_b1 <= nl_sram_raddr_b1;
         l_sram_raddr_b2 <= nl_sram_raddr_b2; l_sram_raddr_b3 <= nl_sram_raddr_b3;
